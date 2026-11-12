@@ -15,6 +15,15 @@
 - ``ingest``     文件接入：身份校验、断点续读、进度与数据一起提交
 - ``generator``  种子可复现的场景化包生成器
 - ``cli``        命令行入口（``python3 -m telemetry.cli``）
+
+折线压缩归档（tele_samples → TPLA 文件，见 docs/archive_format.md）：
+
+- ``archfmt``    归档字节格式常量（单一事实来源）
+- ``archbuild``  流式构建：键集分页游标 + 每组 O(1) 状态在线分段
+- ``archread``   读取器：完整解码、带块选择性的范围查询、摘要
+- ``archverify`` 独立核验：单独解码 + 回库逐点误差枚举
+- ``archdemo``   演示材料（直线/尖峰/锯齿/巨基数 1ns/重复时刻/跨周期）
+- ``archcli``    命令行入口（``python3 -m telemetry.archcli``）
 """
 
 __version__ = "1.0.0"
