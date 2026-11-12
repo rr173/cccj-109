@@ -1,0 +1,14 @@
+run_id,device_id,machine_type,commission_date,enroll_date,L,T,status,cohort_status,exclude_reason,terminal_event_id
+gold_run1,D01,A,2024-01-01,2024-01-01,0,9,failure,included,,E01
+gold_run1,D02,A,2024-01-01,2024-01-05,4,9,retirement,included,,E02
+gold_run1,D03,A,2024-01-01,2024-01-01,0,7,censored_loss,included,,E03
+gold_run1,D04,A,2024-01-01,2024-01-01,0,30,censored_end,included,,
+gold_run1,D05,B,2024-01-01,2024-01-01,0,19,failure,included,,E05
+gold_run1,D06,B,2024-01-01,2024-01-10,,,,rejected,terminated_before_enroll,
+gold_run1,D07,B,2024-01-01,2024-01-01,0,30,failure,included,,E07
+gold_run1,D08,B,2024-01-01,2024-01-01,0,30,censored_end,included,,
+gold_run1,D09,B,2024-01-01,2024-01-01,0,30,censored_end,included,,
+gold_run1,D10,B,2024-01-01,2024-01-01,0,30,censored_end,included,,
+gold_run1,D11,B,2024-01-01,2024-01-31,30,30,failure,excluded_no_time,no_time_at_risk (L=30 >= T=30),E11
+gold_run1,D12,A,2024-01-01,2024-01-01,0,14,failure,included,,E12A
+gold_run1,D13,C,2024-01-01,2024-01-01,0,30,censored_end,included,,

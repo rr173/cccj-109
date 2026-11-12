@@ -26,7 +26,8 @@ import sys
 from pathlib import Path
 
 from . import generator, store as store_mod
-from .ingest import Ingester, IngestError
+from .errors import IngestError
+from .ingest import Ingester
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 
@@ -180,9 +181,12 @@ def _cmd_state(args) -> int:
                      "last_raw_tick, last_cum_tick, last_layout_id "
                      "FROM tele_device_state ORDER BY device_id").fetchall())
     print("\n文件续读进度：")
-    _print_table(["file_id", "path", "consumed_offset", "file_size", "prefix_sha256"],
+    _print_table(["file_id", "path", "identity", "consumed_offset", "file_size",
+                  "prefix_sha256"],
                  con.execute(
-                     "SELECT f.file_id, f.path, s.consumed_offset, s.file_size, "
+                     "SELECT f.file_id, f.path, "
+                     "COALESCE(f.identity, '<旧库：身份未知，禁止自动续接>') AS identity, "
+                     "s.consumed_offset, s.file_size, "
                      "substr(s.prefix_sha256, 1, 16) || '…' "
                      "FROM tele_files f JOIN tele_ingest_state s USING (file_id) "
                      "ORDER BY f.file_id").fetchall())

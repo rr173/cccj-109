@@ -2,7 +2,8 @@
 
 表结构（一律 ``tele_`` 前缀，与 ``pipeline`` 包的生存分析表共存于同一库）
 ------------------------------------------------------------------------
-- ``tele_files``           源文件身份（路径 → file_id）
+- ``tele_files``           源文件身份（路径 → file_id，以及上次读到的对象身份
+                           ``identity`` = 打开用于读取的 fd 的 (dev, ino)）
 - ``tele_ingest_state``    每文件的可续读位置：已消费偏移 + 已消费前缀 SHA-256
 - ``tele_device_state``    每台设备当前启动周期：boot_seq、epoch_ns、tick_hz、
                            上一被接纳 tick（原始与累计）、末包内容（重传判定用）
@@ -33,12 +34,14 @@ import duckdb
 
 from . import protocol as P
 from .decoder import Anomaly, Frame
+from .errors import IngestError
 
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS tele_files (
     file_id INTEGER PRIMARY KEY,
     path TEXT NOT NULL UNIQUE,
-    first_seen_utc TEXT NOT NULL
+    first_seen_utc TEXT NOT NULL,
+    identity TEXT
 );
 CREATE TABLE IF NOT EXISTS tele_ingest_state (
     file_id INTEGER PRIMARY KEY,
@@ -126,7 +129,23 @@ def connect(db_path: str | Path) -> duckdb.DuckDBPyConnection:
     path.parent.mkdir(parents=True, exist_ok=True)
     con = duckdb.connect(str(path))
     con.execute(SCHEMA)
+    _migrate_files_identity(con)
     return con
+
+
+# file identity：把实际打开用于读取的对象 (dev, ino) 存成可比较的文本。
+IDENTITY_UNKNOWN = "unknown"      # 已消费进度存在但无法证明属于哪个对象（旧库）
+
+
+def _migrate_files_identity(con: duckdb.DuckDBPyConnection) -> None:
+    """旧库兼容：``tele_files`` 只有 path 时补出可空的 ``identity`` 列。
+
+    历史行保持 ``NULL``——绝不把当下路径指向的文件认领为历史来源；是否
+    可以自动续接由 ``ingest`` 依据「旧行 + 已有进度」保守判定。
+    """
+    cols = {row[1] for row in con.execute("PRAGMA table_info('tele_files')").fetchall()}
+    if "identity" not in cols:
+        con.execute("ALTER TABLE tele_files ADD COLUMN identity TEXT")
 
 
 def _utcnow() -> str:
@@ -157,6 +176,22 @@ class ApplyResult:
     n_samples: int = 0
 
 
+@dataclass(frozen=True)
+class FileSource:
+    """一个源文件在库中的身份与上次已提交进度。"""
+
+    file_id: int
+    path: str
+    identity: Optional[str]          # 上次读取对象 (dev, ino)；NULL = 旧库未知
+    consumed_offset: int
+    prefix_sha256: str
+    file_size: int
+
+
+def encode_identity(dev: int, ino: int) -> str:
+    return f"{dev}:{ino}"
+
+
 class TelemetryStore:
     """把解码事件应用到 DuckDB；调用方负责事务边界（begin/commit）。"""
 
@@ -178,25 +213,91 @@ class TelemetryStore:
 
     # ---- 文件身份与进度 ------------------------------------------------
 
-    def register_or_lookup_file(self, path: str, file_size: int) -> Tuple[int, int, str]:
-        """返回 (file_id, consumed_offset, prefix_sha256)；新文件则注册。"""
+    def lookup_file(self, path: str) -> Optional[FileSource]:
+        """按登记路径查来源；没有登记则返回 None。"""
         row = self.con.execute(
-            "SELECT f.file_id, s.consumed_offset, s.prefix_sha256 "
+            "SELECT f.file_id, f.path, f.identity, s.consumed_offset, "
+            "s.prefix_sha256, s.file_size "
             "FROM tele_files f JOIN tele_ingest_state s USING (file_id) "
             "WHERE f.path = ?", [path]).fetchone()
-        if row is not None:
-            return row[0], row[1], row[2]
+        if row is None:
+            return None
+        return FileSource(row[0], row[1], row[2], row[3], row[4], row[5])
+
+    def lookup_file_by_identity(self, identity: str) -> Optional[FileSource]:
+        """按对象身份找已登记来源（同一文件被移动/改名时沿用旧 file_id）。"""
+        rows = self.con.execute(
+            "SELECT f.file_id, f.path, f.identity, s.consumed_offset, "
+            "s.prefix_sha256, s.file_size "
+            "FROM tele_files f JOIN tele_ingest_state s USING (file_id) "
+            "WHERE f.identity = ? ORDER BY f.file_id", [identity]).fetchall()
+        if not rows:
+            return None
+        row = rows[0]
+        return FileSource(row[0], row[1], row[2], row[3], row[4], row[5])
+
+    def update_file_path(self, file_id: int, path: str) -> None:
+        self.con.execute("UPDATE tele_files SET path = ? WHERE file_id = ?",
+                         [path, file_id])
+
+    def register_file(self, path: str, identity: str, file_size: int) -> FileSource:
+        """登记一个新来源（新文件对象），进度从 0 开始。"""
         file_id = self.con.execute(
             "SELECT COALESCE(MAX(file_id), 0) + 1 FROM tele_files").fetchone()[0]
-        self.con.execute("INSERT INTO tele_files VALUES (?, ?, ?)",
-                         [file_id, path, _utcnow()])
-        empty_sha = "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        self.con.execute(
+            "INSERT INTO tele_files (file_id, path, first_seen_utc, identity) "
+            "VALUES (?, ?, ?, ?)", [file_id, path, _utcnow(), identity])
+        empty_sha = ("e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855")
         self.con.execute("INSERT INTO tele_ingest_state VALUES (?, 0, ?, ?, ?)",
                          [file_id, empty_sha, file_size, _utcnow()])
-        return file_id, 0, empty_sha
+        return FileSource(file_id, path, identity, 0, empty_sha, file_size)
 
-    def update_ingest_state(self, file_id: int, consumed_offset: int,
-                            prefix_sha256: str, file_size: int) -> None:
+    def claim_unregistered(self, path: str, identity: str, size: int) -> FileSource:
+        """接手旧库中「已登记路径但从未接入成功」的行（consumed_offset=0）。
+
+        只补身份与当前大小，不改路径、不新增行；进度仍是 0，因此不涉及任何
+        已处理字节归属。若该行已被其他对象接手（identity 已非 NULL），按
+        正常冲突规则拒绝。
+        """
+        row = self.lookup_file(path)
+        if row is None:
+            return self.register_file(path, identity, size)
+        if row.identity is not None and row.identity != identity:
+            raise IngestError(
+                f"路径 {path} 已被另一个文件对象占用：登记的来源 file_id="
+                f"{row.file_id} 身份为 {row.identity}，当前打开对象身份为 "
+                f"{identity}；文件被替换，拒绝把新对象的数据记到旧来源名下")
+        if row.consumed_offset != 0:
+            raise IngestError(
+                f"来源 file_id={row.file_id}（{row.path}）已有进度 "
+                f"{row.consumed_offset}，但缺少对象身份信息（旧库格式）；"
+                f"保守阻止自动续接。旧记录与样本保持原样，可用前缀哈希审计")
+        # 进度为 0 仍可能留有旧数据（异常/手工库）：只要该来源名下有样本或
+        # 帧台账，就不能把当下路径的对象认领为它的后续。
+        existing = self.con.execute(
+            "SELECT (SELECT COUNT(*) FROM tele_samples WHERE file_id = ?) + "
+            "(SELECT COUNT(*) FROM tele_frames WHERE file_id = ?)",
+            [row.file_id, row.file_id]).fetchone()[0]
+        if existing:
+            raise IngestError(
+                f"来源 file_id={row.file_id}（{row.path}）没有对象身份信息，"
+                f"但名下已有 {existing} 条样本/帧台账；无法证明它们属于当前"
+                f"打开的文件，保守阻止自动续接（不认领、不清空）")
+        self.con.execute(
+            "UPDATE tele_files SET identity = ? WHERE file_id = ?",
+            [identity, row.file_id])
+        self.con.execute(
+            "UPDATE tele_ingest_state SET file_size = ?, updated_utc = ? "
+            "WHERE file_id = ?", [size, _utcnow(), row.file_id])
+        return FileSource(row.file_id, row.path, identity, 0,
+                          row.prefix_sha256, size)
+
+    def update_source(self, file_id: int, identity: str, consumed_offset: int,
+                      prefix_sha256: str, file_size: int) -> None:
+        """进度与来源身份一起保存：身份也绑定到「读到这个偏移的对象」。"""
+        self.con.execute(
+            "UPDATE tele_files SET identity = ? WHERE file_id = ?",
+            [identity, file_id])
         self.con.execute(
             "UPDATE tele_ingest_state SET consumed_offset = ?, prefix_sha256 = ?, "
             "file_size = ?, updated_utc = ? WHERE file_id = ?",
