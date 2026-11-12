@@ -1,0 +1,9 @@
+run_id,grp,t,n_risk,d_failure,d_retirement,n_censored
+gold_run1,A,9,4,1,1,0
+gold_run1,A,14,2,1,0,0
+gold_run1,B,19,5,1,0,0
+gold_run1,B,30,4,1,0,3
+gold_run1,ALL,9,10,1,1,0
+gold_run1,ALL,14,8,1,0,0
+gold_run1,ALL,19,7,1,0,0
+gold_run1,ALL,30,6,1,0,5
