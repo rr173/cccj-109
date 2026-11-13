@@ -74,6 +74,22 @@ A 组台数必须**恰好**等于设计配额。工具按 cluster 的逐层设�
 ./run_allocation_demo.sh          # 无解/多解逐rank/大Z/边界/文件安全/回放
 ```
 
+另有面向合作研究方的 **差分隐私计数共享**（`dp_share/`，
+`python3 -m dp_share.cli`）：从既有 DuckDB 的 `run_devices` 选定一个
+`run_id`，只接纳 `cohort_status='included'` 的设备，按
+`failure / retirement / censored` 固定公共结局域发布「机型×结局」格子
+人数——每格独立加 `Laplace(0,1/epsilon)`，单台设备只进一个格子故整次向量
+查询 L1 敏感度为 1、**只收一次 epsilon**；预算、噪声答案与 request_id
+在同一 SQLite 事务里记账，同规范查询换 request_id 复用原答案不收费、
+同 request_id 改参数冲突；源队列变化即冻结新查询。生产随机数只取系统安全
+随机源，对外不输出真实人数、逐设备资料或原始噪声。机制、顺序组合账本与
+有限精度工程近似的边界见 [`docs/dp_share.md`](docs/dp_share.md)，一条命令
+演示：
+
+```bash
+./run_dp_share_demo.sh            # 开通→发布→复用/冲突→预算耗尽→查账→冻结
+```
+
 ### 源文件身份与安全续读（要点）
 
 - 接入时只 `os.open` 一次，路径与「实际读取对象」绑定：对象身份取
