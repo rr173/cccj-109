@@ -41,6 +41,24 @@ indeterminate）与可复核证据（确认用了哪条读数、连续段为何�
 ./run_startup_demo.sh              # 真实接入 → 识别 → 证据回溯 → 交叉核对
 ```
 
+不同采集器的钟会走偏，`ts_ns` 只按设备**自己声明**的起点与频率换算，
+不能据此断言两台设备的读数发生在同一时刻。**离线时钟对齐工具**
+（`alignment/`，`python3 -m alignment.cli`）读取已有测量与一份同步锚点
+CSV，按 `(device_id, boot_seq)` 以相邻锚点分段仿射映射到共同参考钟：
+同刻锚点仅参考值与误差完全一致才折叠（仍列出全部 `anchor_id`）；每组
+至少两点且两坐标严格递增；任一段斜率偏离 1 超过 `max_ppm` 则**整组无效**
+（绝不跳过坏段）。内插/有限外推的中心与误差半径全程用整数/`Fraction`，
+输出 `floor(y)`、`floor(y-u)`、`ceil(y+u)` 与所用锚点、内插/外推标识；
+超出外推额度或找不到有效组时返回**未对齐及具体原因**，不用本地时刻冒充
+参考钟。`window` 子命令按参考钟窗口 **[L, R] 范围相交**选取（不只看中心），
+并明确报告多少测量无法判断。工具只读库、不改接入器、不回写时间、不推导
+启机/故障结论；测量分批流式读取，锚点驻留内存。语义与误差承诺见
+[`docs/clock_alignment.md`](docs/clock_alignment.md)，一条命令演示：
+
+```bash
+./run_alignment_demo.sh            # 真实接入 → 锚点校验 → 投影/窗口 → 手算核对
+```
+
 ### 源文件身份与安全续读（要点）
 
 - 接入时只 `os.open` 一次，路径与「实际读取对象」绑定：对象身份取
@@ -64,6 +82,7 @@ pip install -r requirements.txt   # numpy, duckdb
 ./run_telemetry_demo.sh           # 遥测接入演示（二进制帧流 → DuckDB）
 ./run_archive_demo.sh             # 折线压缩归档演示
 ./run_startup_demo.sh             # 启机过程识别演示
+./run_alignment_demo.sh           # 离线时钟对齐演示
 ```
 
 `run_demo.sh` 等价于 `python3 -m pipeline.cli demo`，依次执行：

@@ -1,0 +1,5 @@
+anchor_id,device_id,boot_seq,local_ns,reference_ns,error_ns
+x1,2,1,0,10,0
+x1,2,1,999,20,0
+x2,2,1,1.5,20,0
+x3,2,1,100,200,-1
