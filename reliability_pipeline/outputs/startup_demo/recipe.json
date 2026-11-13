@@ -1,0 +1,31 @@
+{
+  "name": "demo-start",
+  "channels": {
+    "pressure": {
+      "channel": 1,
+      "unit": "kPa",
+      "max_age_ns": 1000000000
+    },
+    "vibration": {
+      "channel": 2,
+      "unit": "m/s",
+      "max_age_ns": 1000000000
+    },
+    "temperature": {
+      "channel": 0,
+      "unit": "°C",
+      "max_age_ns": 2000000000
+    }
+  },
+  "thresholds": {
+    "P_start": 100.0,
+    "P_run": 90.0,
+    "V_run": 5.0,
+    "T_max": 80.0
+  },
+  "durations": {
+    "C": 2000000000,
+    "H": 3000000000,
+    "W": 10000000000
+  }
+}

@@ -1,0 +1,15 @@
+run_id,event_id,device_id,event_type,event_date,received_at,voids_event_id,disposition
+g1,E01,D01,failure,2024-01-10,2024-01-12,,terminal_selected
+g1,E02,D02,retirement,2024-01-10,2024-01-11,,terminal_selected
+g1,E03,D03,loss_to_followup,2024-01-08,2024-01-09,,terminal_selected
+g1,E05,D05,failure,2024-01-20,2024-01-22,,terminal_selected
+g1,E06,D06,failure,2024-01-05,2024-01-06,,pre_enroll_terminal
+g1,E07,D07,failure,2024-01-31,2024-02-01,,terminal_selected
+g1,E08,D08,failure,2024-13-40,2024-01-15,,rejected:invalid_event_date
+g1,E09,D09,failure,2023-12-15,2024-01-05,,rejected:event_before_commission
+g1,E10A,D10,void,2024-01-15,2024-01-16,E10B,rejected:void_cycle
+g1,E10B,D10,void,2024-01-15,2024-01-16,E10A,rejected:void_cycle
+g1,E11,D11,failure,2024-01-31,2024-02-01,,terminal_selected
+g1,E12A,D12,failure,2024-01-15,2024-01-17,,terminal_selected
+g1,E12B,D12,retirement,2024-01-15,2024-01-17,,superseded_same_day
+g1,V05,D05,void,2024-02-20,2024-02-20,E05,not_visible_after_cutoff

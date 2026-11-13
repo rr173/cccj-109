@@ -26,6 +26,21 @@
 ./run_archive_demo.sh              # 材料 → 接入 → 归档 → 核验 → 损坏检测
 ```
 
+遥测测量之上另有 **离线启机过程识别器**（`startup/`）：直接读取 DuckDB 的
+`tele_samples`，按一份固定的 JSON 启机配方（压力/振动/温度通道与预期单位、
+各通道 max_age_ns、P_start/P_run/V_run/T_max、确认等待 C、连续稳定 H、
+总期限 W）识别每一次启机尝试，输出三态判定（confirmed / rejected /
+indeterminate）与可复核证据（确认用了哪条读数、连续段为何被打断、温度
+未知或超限从哪里开始、同刻冲突双方、缺测区间）。零阶保持 + 过期即未知；
+事件驱动推进，不展开逐时刻网格；不推断故障结局、不算可靠性曲线、不经过
+压缩归档；`indeterminate` 不算设备启动失败。语义、同刻事件顺序、未知
+传播与内存开销论证见
+[`docs/startup_detection.md`](docs/startup_detection.md)，一条命令演示：
+
+```bash
+./run_startup_demo.sh              # 真实接入 → 识别 → 证据回溯 → 交叉核对
+```
+
 ### 源文件身份与安全续读（要点）
 
 - 接入时只 `os.open` 一次，路径与「实际读取对象」绑定：对象身份取
@@ -46,6 +61,9 @@
 ```bash
 pip install -r requirements.txt   # numpy, duckdb
 ./run_demo.sh                     # 一条命令：日志生成 → 分析 → 核对 → 偏差展示
+./run_telemetry_demo.sh           # 遥测接入演示（二进制帧流 → DuckDB）
+./run_archive_demo.sh             # 折线压缩归档演示
+./run_startup_demo.sh             # 启机过程识别演示
 ```
 
 `run_demo.sh` 等价于 `python3 -m pipeline.cli demo`，依次执行：

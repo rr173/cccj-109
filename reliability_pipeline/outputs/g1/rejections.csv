@@ -1,0 +1,6 @@
+run_id,level,entity_id,reason,detail
+g1,device,D06,terminated_before_enroll,入组日 2024-01-10 前已存在有效终止事件 E06（failure @ 2024-01-05）
+g1,event,E09,event_before_commission,事件日期 2023-12-15 早于投产日 2024-01-01
+g1,event,E08,invalid_event_date,事件日期非法: '2024-13-40'
+g1,event,E10A,void_cycle,作废引用构成循环，循环上所有事件一并拒收
+g1,event,E10B,void_cycle,作废引用构成循环，循环上所有事件一并拒收
