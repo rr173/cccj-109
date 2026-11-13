@@ -1,0 +1,82 @@
+{
+  "Z": 15,
+  "cluster_contribution": {
+    "ga1": {
+      "A": 1
+    },
+    "ga2": {
+      "A": 1
+    },
+    "ga3": {
+      "A": 1
+    },
+    "ga4": {
+      "A": 1
+    },
+    "ga5": {
+      "A": 1
+    },
+    "ga6": {
+      "A": 1
+    },
+    "gb1": {
+      "B": 1
+    },
+    "gb2": {
+      "B": 1
+    },
+    "gb3": {
+      "B": 1
+    }
+  },
+  "locked_A_contribution": {
+    "A": 0,
+    "B": 0
+  },
+  "locks": [
+    {
+      "arm": "B",
+      "cluster_id": "gb3"
+    }
+  ],
+  "ordering": {
+    "clusters": [
+      "ga1",
+      "ga2",
+      "ga3",
+      "ga4",
+      "ga5",
+      "ga6",
+      "gb1",
+      "gb2",
+      "gb3"
+    ],
+    "strata": [
+      "A",
+      "B"
+    ]
+  },
+  "rank_order": "cluster order above, A before B (lexicographic)",
+  "residual": {
+    "A": 4,
+    "B": 2
+  },
+  "stratum_sizes": {
+    "A": 6,
+    "B": 3
+  },
+  "target_A": {
+    "A": 4,
+    "B": 2
+  },
+  "unlocked_clusters": [
+    "ga1",
+    "ga2",
+    "ga3",
+    "ga4",
+    "ga5",
+    "ga6",
+    "gb1",
+    "gb2"
+  ]
+}

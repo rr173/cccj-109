@@ -1,0 +1,10 @@
+device_id,stratum,cluster_id,arm,locked
+a1,A,ga1,B,no
+a2,A,ga2,A,no
+a3,A,ga3,A,no
+a4,A,ga4,B,no
+a5,A,ga5,A,no
+a6,A,ga6,A,no
+b1,B,gb1,A,no
+b2,B,gb2,A,no
+b3,B,gb3,B,yes

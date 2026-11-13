@@ -1,0 +1,13 @@
+{
+  "target_A": {
+    "A": 4,
+    "B": 2
+  },
+  "locks": [
+    {
+      "cluster_id": "gb3",
+      "arm": "B",
+      "reason": "共用班组已定"
+    }
+  ]
+}

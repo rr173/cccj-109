@@ -1,0 +1,7 @@
+device_id,stratum,cluster_id
+L1-1,L1,g1
+L1-2,L1,g2
+L1-3,L1,g2
+L2-1,L2,g1
+L2-2,L2,g1
+L2-3,L2,g3

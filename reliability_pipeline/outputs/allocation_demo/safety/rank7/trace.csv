@@ -1,0 +1,10 @@
+step,cluster_id,locked,locked_arm,z_A,z_B,u_or_local_rank,chosen,remaining_before,remaining_after,contribution
+1,ga1,no,,10,5,7,A,"[4, 2]","[3, 2]",A=1
+2,ga2,no,,6,4,7,B,"[3, 2]","[3, 2]",A=1
+3,ga3,no,,3,1,1,A,"[3, 2]","[2, 2]",A=1
+4,ga4,no,,2,1,1,A,"[2, 2]","[1, 2]",A=1
+5,ga5,no,,1,1,1,B,"[1, 2]","[1, 2]",A=1
+6,ga6,no,,1,0,0,A,"[1, 2]","[0, 2]",A=1
+7,gb1,no,,1,0,0,A,"[0, 2]","[0, 1]",B=1
+8,gb2,no,,1,0,0,A,"[0, 1]","[0, 0]",B=1
+9,gb3,yes,B,,,,B,"[0, 0]","[0, 0]",B=1

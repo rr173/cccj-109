@@ -1,0 +1,11 @@
+{
+  "target_A": {
+    "S": 0
+  },
+  "locks": [
+    {
+      "cluster_id": "cx1",
+      "arm": "A"
+    }
+  ]
+}

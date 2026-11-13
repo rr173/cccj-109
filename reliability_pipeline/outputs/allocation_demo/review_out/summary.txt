@@ -1,0 +1,59 @@
+实验分配结果（整簇随机化；精确等概率抽签）
+==============================================================================
+方案总数 Z = 15
+模式 = sample；seed = 7；结果 rank = 5
+动态规划状态数 = 78（预算 max_states = 5000000）
+
+规范排序（按 Python 字符串码点顺序，与 CSV 行序无关）：
+  层序:   'A', 'B'
+  cluster 序: 'ga1', 'ga2', 'ga3', 'ga4', 'ga5', 'ga6', 'gb1', 'gb2', 'gb3'
+  rank 按上述 cluster 序、A 在 B 前的字典序编号
+
+锁定项（先计入配额推理）：
+  'gb3' → B（逐层设备数 B×1）；理由: '共用班组已定'
+  锁定后剩余配额（target_A − 锁定 A 贡献）:
+    'A': 4 − 0 = 4（未锁定设备 6 台）
+    'B': 2 − 0 = 2（未锁定设备 2 台）
+
+每层 A/B 台数：
+层                            设备数  target_A     实际A     实际B
+A                              6         4       4       2
+B                              3         2       2       1
+
+每个 cluster 的方案（按规范组序）：
+  cluster             方案    锁定    逐层设备数
+  ga1                 A           A×1
+  ga2                 A           A×1
+  ga3                 B           A×1
+  ga4                 B           A×1
+  ga5                 A           A×1
+  ga6                 A           A×1
+  gb1                 A           B×1
+  gb2                 A           B×1
+  gb3                 B     是     B×1
+
+逐设备名单（按 cluster、device_id 排序）：
+  device_id           stratum             cluster_id          方案    锁定
+  a1                  A                   ga1                 A     no
+  a2                  A                   ga2                 A     no
+  a3                  A                   ga3                 B     no
+  a4                  A                   ga4                 B     no
+  a5                  A                   ga5                 A     no
+  a6                  A                   ga6                 A     no
+  b1                  B                   gb1                 A     no
+  b2                  B                   gb2                 A     no
+  b3                  B                   gb3                 B     yes
+
+抽签轨迹（每一步面对的 A/B 完成数与实际选择）：
+    # cluster           锁定       A完成数    B完成数      随机数/局部rank   选择  剩余配额
+    1 ga1                          10       5               5    A  [3,2]
+    2 ga2                           6       4               2    A  [2,2]
+    3 ga3                           3       3               3    B  [2,2]
+    4 ga4                           2       1               2    B  [2,2]
+    5 ga5                           1       0               0    A  [1,2]
+    6 ga6                           1       0               0    A  [0,2]
+    7 gb1                           1       0               0    A  [0,1]
+    8 gb2                           1       0               0    A  [0,0]
+    9 gb3               是           -       -               -    B  [0,0]
+
+说明：抽签等价于在 [0,Z) 上均匀抽一个 rank 再按同一字典序解码；seed 只用于产生分支随机数，不改变 Z、组序或 rank↔方案对应。

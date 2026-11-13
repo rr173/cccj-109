@@ -1,0 +1,14 @@
+{
+  "Z": 15,
+  "inputs": {
+    "design": "outputs/allocation_demo/locked_multi/design.json",
+    "devices": "outputs/allocation_demo/locked_multi/devices.csv"
+  },
+  "max_states": 5000000,
+  "mode": "sample",
+  "n_states": 78,
+  "rank": 12,
+  "rank_order": "canonical cluster order, A before B",
+  "replay": "use design.normalized.json + rank; no algorithm state needed",
+  "seed": 42
+}
